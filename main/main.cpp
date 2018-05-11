@@ -105,7 +105,7 @@ void setup_flat_aggregation(Topology* topology) {
         streams.push_back(opt.value());
     }
     Stream<double>* unioned_stream = topology->union_streams(streams);
-    unioned_stream->sink(double_print_sink);
+    unioned_stream->networkSink(topology, STR_VALUE(BUILDING_AGGREGATOR_FOR), double_to_bytes);
 }
 
 esp_err_t event_handler(void *ctx, system_event_t *event) {
