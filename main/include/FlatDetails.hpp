@@ -6,8 +6,8 @@
 #define STRINGIZER(arg)     #arg
 #define STR_VALUE(arg)      STRINGIZER(arg)
 
-#ifndef DEVICE_FLAT_NUM
-#error DEVICE_FLAT_NUM is not defined
+#ifndef FLAT
+#error FLAT is not defined
 #endif
 
 #ifndef NUM_FLATS

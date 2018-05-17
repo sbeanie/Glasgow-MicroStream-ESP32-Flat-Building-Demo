@@ -50,9 +50,9 @@ void app_main(void) {
 
 
 void setup_sensor_readings_publication(Topology* topology) {
-    std::string HUM_STREAM_ID = get_stream_id(DEVICE_FLAT_NUM, STR_VALUE(DEVICE_FLAT_ROOM), "humidity");
-    std::string PRESSURE_STREAM_ID = get_stream_id(DEVICE_FLAT_NUM, STR_VALUE(DEVICE_FLAT_ROOM), "pressure");
-    std::string TEMPERATURE_STREAM_ID = get_stream_id(DEVICE_FLAT_NUM, STR_VALUE(DEVICE_FLAT_ROOM), "temperature");
+    std::string HUM_STREAM_ID = get_stream_id(FLAT, STR_VALUE(DEVICE_FLAT_ROOM), "humidity");
+    std::string PRESSURE_STREAM_ID = get_stream_id(FLAT, STR_VALUE(DEVICE_FLAT_ROOM), "pressure");
+    std::string TEMPERATURE_STREAM_ID = get_stream_id(FLAT, STR_VALUE(DEVICE_FLAT_ROOM), "temperature");
 
     DoubleValuePollable* hPollable = new DoubleValuePollable(&compensated_humidity_double);
     DoubleValuePollable* pPollable = new DoubleValuePollable(&compensated_pressure_double);
@@ -71,16 +71,16 @@ void publish_flat_aggregated_sensor_readings(Topology* topology) {
     const char *reading_type = STR_VALUE(DEVICE_FLAT_AGGREGATOR_FOR); // humidity/pressure/temperature
     if (strcmp(reading_type, "") == 0) return;
 
-    std::cout << "Aggregating " << reading_type << " readings across rooms in flat " << DEVICE_FLAT_NUM << std::endl;
+    std::cout << "Aggregating " << reading_type << " readings across rooms in flat " << FLAT << std::endl;
 
     optional<NetworkSource<double>*> bathroom_source_opt =
-            topology->addNetworkSource(get_stream_id(DEVICE_FLAT_NUM, "bathroom", reading_type), byte_array_to_double);
+            topology->addNetworkSource(get_stream_id(FLAT, "bathroom", reading_type), byte_array_to_double);
 
     optional<NetworkSource<double>*> kitchen_source_opt =
-            topology->addNetworkSource(get_stream_id(DEVICE_FLAT_NUM, "kitchen", reading_type), byte_array_to_double);
+            topology->addNetworkSource(get_stream_id(FLAT, "kitchen", reading_type), byte_array_to_double);
 
     optional<NetworkSource<double>*> bedroom_source_opt =
-            topology->addNetworkSource(get_stream_id(DEVICE_FLAT_NUM, "bedroom", reading_type), byte_array_to_double);
+            topology->addNetworkSource(get_stream_id(FLAT, "bedroom", reading_type), byte_array_to_double);
 
     if ( ! bathroom_source_opt.is_initialized()) exit (1);
     if ( ! kitchen_source_opt.is_initialized()) exit (1);
@@ -91,7 +91,7 @@ void publish_flat_aggregated_sensor_readings(Topology* topology) {
             *kitchen_source = kitchen_source_opt.value();
 
     Stream<double>* union_stream = bathroom_source->union_streams(std::list<Subscribeable<double>*>{bedroom_source, kitchen_source});
-    union_stream->networkSink(topology, get_aggregation_stream_id(DEVICE_FLAT_NUM, reading_type), double_to_bytes);
+    union_stream->networkSink(topology, get_aggregation_stream_id(FLAT, reading_type), double_to_bytes);
 }
 
 void setup_flat_aggregation(Topology* topology) {
