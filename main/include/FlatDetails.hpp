@@ -14,8 +14,8 @@
 #error NUM_FLATS is not defined
 #endif
 
-#ifndef DEVICE_FLAT_ROOM
-#error DEVICE_FLAT_ROOM is not defined
+#ifndef ROOM
+#error ROOM is not defined
 #endif
 
 #ifndef DEVICE_FLAT_AGGREGATOR_FOR

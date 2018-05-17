@@ -50,9 +50,9 @@ void app_main(void) {
 
 
 void setup_sensor_readings_publication(Topology* topology) {
-    std::string HUM_STREAM_ID = get_stream_id(FLAT, STR_VALUE(DEVICE_FLAT_ROOM), "humidity");
-    std::string PRESSURE_STREAM_ID = get_stream_id(FLAT, STR_VALUE(DEVICE_FLAT_ROOM), "pressure");
-    std::string TEMPERATURE_STREAM_ID = get_stream_id(FLAT, STR_VALUE(DEVICE_FLAT_ROOM), "temperature");
+    std::string HUM_STREAM_ID = get_stream_id(FLAT, STR_VALUE(ROOM), "humidity");
+    std::string PRESSURE_STREAM_ID = get_stream_id(FLAT, STR_VALUE(ROOM), "pressure");
+    std::string TEMPERATURE_STREAM_ID = get_stream_id(FLAT, STR_VALUE(ROOM), "temperature");
 
     DoubleValuePollable* hPollable = new DoubleValuePollable(&compensated_humidity_double);
     DoubleValuePollable* pPollable = new DoubleValuePollable(&compensated_pressure_double);
