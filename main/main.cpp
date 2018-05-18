@@ -42,17 +42,27 @@ void app_main(void) {
     Topology topology = Topology(std::chrono::seconds(5));
 
     setup_sensor_readings_publication(&topology);
-    publish_flat_aggregated_sensor_readings(&topology);
-    setup_flat_aggregation(&topology);
+    //publish_flat_aggregated_sensor_readings(&topology);
+    //setup_flat_aggregation(&topology);
     topology.run();
     return;
 }
 
+double (*average) (std::pair<int, std::list<double>>) = [] (std::pair<int, std::list<double>> keyValuePair) {
+    if (keyValuePair.second.size() == 0) return 0;
+    double sum = 0;
+    for (double &d : keyValuePair.second) {
+        sum += d;
+    }
+    return sum / keyValuePair.second.size();
+};
 
 void setup_sensor_readings_publication(Topology* topology) {
-    std::string HUM_STREAM_ID = get_stream_id(FLAT, STR_VALUE(ROOM), "humidity");
-    std::string PRESSURE_STREAM_ID = get_stream_id(FLAT, STR_VALUE(ROOM), "pressure");
-    std::string TEMPERATURE_STREAM_ID = get_stream_id(FLAT, STR_VALUE(ROOM), "temperature");
+    const std::string deviceRoom = std::string(STR_VALUE(ROOM));
+    
+    std::string HUM_STREAM_ID = get_stream_id(FLAT, deviceRoom.c_str(), "humidity");
+    std::string PRESSURE_STREAM_ID = get_stream_id(FLAT, deviceRoom.c_str(), "pressure");
+    std::string TEMPERATURE_STREAM_ID = get_stream_id(FLAT, deviceRoom.c_str(), "temperature");
 
     DoubleValuePollable* hPollable = new DoubleValuePollable(&compensated_humidity_double);
     DoubleValuePollable* pPollable = new DoubleValuePollable(&compensated_pressure_double);
@@ -65,9 +75,35 @@ void setup_sensor_readings_publication(Topology* topology) {
     humidityStream->networkSink(topology, HUM_STREAM_ID, double_to_bytes);
     pressureStream->networkSink(topology, PRESSURE_STREAM_ID, double_to_bytes);
     temperatureStream->networkSink(topology, TEMPERATURE_STREAM_ID, double_to_bytes);
+
+    temperatureStream->sink([] (double val) {
+        ESP_LOGI(STR_VALUE(ROOM), "Local temperature %.5f °C", val);
+    });
+    humidityStream->sink([] (double val) {
+        ESP_LOGI(STR_VALUE(ROOM), "Local humidity %.5f %%", val);
+    });
+    pressureStream->sink([] (double val) {
+        ESP_LOGI(STR_VALUE(ROOM), "Local pressure %.5f %%", val);
+    });
+
+    // aggregate temperature from other rooms, calculate the average, then publish it
+    std::list<Subscribeable<double>*> streams; 
+    for (int i = 0; i < 4; i++) {
+        if (deviceRoom.compare(rooms[i]) == 0) continue;
+        auto netSource = topology->addNetworkSource(get_stream_id(FLAT, rooms[i].c_str(), "temperature"), byte_array_to_double);
+        if (!netSource.is_initialized()) exit(1);
+        streams.push_back(netSource.value());
+    }
+    auto flatTemperature = temperatureStream->union_streams(streams)
+        ->last(std::chrono::seconds(5))
+        ->aggregate(average);
+    flatTemperature->sink([] (double val) {
+        ESP_LOGI(STR_VALUE(FLAT), "Average temperature of flat %.5f °C", val);
+    });
+    flatTemperature->networkSink(topology, get_aggregation_stream_id(FLAT, "temperature"), double_to_bytes);
 }
 
-void publish_flat_aggregated_sensor_readings(Topology* topology) {
+/*void publish_flat_aggregated_sensor_readings(Topology* topology) {
     const char *reading_type = STR_VALUE(DEVICE_FLAT_AGGREGATOR_FOR); // humidity/pressure/temperature
     if (strcmp(reading_type, "") == 0) return;
 
@@ -92,9 +128,9 @@ void publish_flat_aggregated_sensor_readings(Topology* topology) {
 
     Stream<double>* union_stream = bathroom_source->union_streams(std::list<Subscribeable<double>*>{bedroom_source, kitchen_source});
     union_stream->networkSink(topology, get_aggregation_stream_id(FLAT, reading_type), double_to_bytes);
-}
+}*/
 
-void setup_flat_aggregation(Topology* topology) {
+/*void setup_flat_aggregation(Topology* topology) {
     const char *reading_type = STR_VALUE(BUILDING_AGGREGATOR_FOR); // humidity/pressure/temperature
     if (strcmp(reading_type, "") == 0) return;
 
@@ -106,7 +142,7 @@ void setup_flat_aggregation(Topology* topology) {
     }
     Stream<double>* unioned_stream = topology->union_streams(streams);
     unioned_stream->networkSink(topology, STR_VALUE(BUILDING_AGGREGATOR_FOR), double_to_bytes);
-}
+}*/
 
 esp_err_t event_handler(void *ctx, system_event_t *event) {
 	std::cout << "ERROR CAPTURED" << std::endl;

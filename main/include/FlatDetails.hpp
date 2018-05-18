@@ -26,6 +26,7 @@
 #error BUILDING_AGGREGATOR_FOR is not set
 #endif
 
+const std::string rooms[4] = {"bedroom", "kitchen", "bathroom", "livingroom"};
 
 std::string get_stream_id(int flat_num, const char* flat_room, const char* reading_type) {
     std::stringstream ss;
@@ -40,6 +41,5 @@ std::string get_aggregation_stream_id(int flat_num, const char* reading_type) {
     std::string id = ss.str();
     return id;
 }
-
 
 #endif //PAPERDEMO_FLATDETAILS_HPP
